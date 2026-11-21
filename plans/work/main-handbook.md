@@ -2,302 +2,212 @@
 
 How the main session works, the local stack, and the lessons of earlier sessions. Stable: it changes when something is
 learned, not every session (the session's state is in [`../../HANDOVER.md`](../../HANDOVER.md), the plan ahead in
-[`../roadmap.md`](../roadmap.md)). Moved out of HANDOVER on 2026-11-13 (session 33). Stream agents' gotchas are in
+[`../roadmap.md`](../roadmap.md)). Stream agents' gotchas are in
 [`../../docs/local-development.md`](../../docs/local-development.md) (*Working notes*) and
-[`../../docs/ci-runner.md`](../../docs/ci-runner.md).
+[`../../docs/ci-runner.md`](../../docs/ci-runner.md) (*Working with the workflows*).
 
 ## How we work (user preferences, binding)
 
 - **Good and easy to use:** look at pages in the browser, not only tests; fix friction or file it.
 - **Demo first; admin UI focus.** No extra negative proofs or flake hunts unless a change needs one. No tests that
   depend on timing ("wait until X, fail after 60 s" is fine).
-- **Approve and merge without asking** when a PR is ready (reviewed, checked live where relevant, CI green with the
-  tests actually run); tell the user afterwards. Design, scope and destructive actions go to the user.
-- **Handle GitHub on your own:** answer new or updated issues and PRs; close verified-done issues with an evidence
-  comment.
-- **Stream B** is a remote agent (GitHub `thekim1`) with its own coordinating main session on another machine; talk
-  only through GitHub (labels `stream-b`, `stream-a`, `main`). B merges its own PRs; review its security-relevant parts.
-  Before taking B's paths, check for open `b/…` work and announce it in an issue (as #528 did). `gh` acts as
-  `ume-nichlas`. Stream b's agent sometimes does user-requested stream-a work on `a/` branches (#526).
-- **Main session** owns `plans/**`, root `*.md` and `.github/stream-ownership.txt` (commit to `main`). Stream-A work
-  on `a/<id>-<slug>` branches; a PR touching another stream's paths uses a `main-session/<slug>` branch. The user may
-  give the main session a whole feature to build (upload knowledge bases, 2026-11-09).
-- **Lean CI:** PR jobs path-filtered; full set before a release, **plus a release dry run**; `e2e` alone on the
-  runners; agents run only the test projects they touch; no re-dispatching `verify` on main.
+- **Every change is a pull request** (ruleset "Protect main", 2026-11-16): one approving review and the required
+  checks. The main session owns `plans/**`, root `*.md` and `.github/stream-ownership.txt` and changes them on a
+  `main-session/<slug>` branch; a design line that belongs to a code change goes into that pull request. Stream-a
+  work is on `a/<id>-<slug>` branches; a pull request that touches another stream's paths uses `main-session/`.
+- **Who approves and merges.** The session approves nothing on this machine: the permission check stops
+  `gh pr review --approve` as `ume-nichlas` and as `Crotalus`, also with the user's go-ahead. Review as a comment,
+  say that it is not the approval, and give the user the line to run
+  (`gh auth switch -u Crotalus && gh pr review <n> --approve && gh auth switch -u ume-nichlas`). A pull request goes
+  in on the user's approval, on `thekim1`'s approval, or by `thekim1`'s `--admin` on a green one (allowed by the user,
+  2026-11-19). Never `gh pr merge --admin` as `ume-nichlas`. **Merge an approved, green pull request without
+  asking** and tell the user afterwards. Design, scope and destructive actions go to the user.
+- **A decision for the user** is asked as four alternatives with one recommendation (the question tool).
+- **Handle GitHub on your own:** answer new or updated issues and pull requests; close verified-done issues with an
+  evidence comment.
+- **Two machines.** `thekim1`'s runs stream b, often stream a, and a coordinating session of its own; talk only
+  through GitHub (labels `stream-b`, `stream-a`, `main`). It merges its own pull requests; review their
+  security-relevant parts. Before taking stream b's paths, look for open `b/…` work and say so in an issue.
+  **Look at the open pull requests before each step** (`gh pr list`), and say on the other machine's pull request
+  what you are about to write. `gh` here acts as `ume-nichlas`: run `gh auth status` before every push or post.
+- **Lean CI:** pull-request jobs are path-filtered; the full set runs before a release, plus a release dry run;
+  `e2e` runs alone on the runners; agents run only the test projects they touch; no re-dispatching `verify` on
+  `main`. **Fix a failing release check in isolation**, not with another 30-minute dry run (user, 2026-11-15).
 - **Subagents:** own worktree (`../rag-<id>`), full brief, no touching the live stack unless the brief says so. Their
   report is a claim: read the diff, re-run the tests, check CI's test totals, check live, spot-check line numbers.
-  Splitting a feature into an API agent and a UI agent against a contract written first in the design worked well
-  (#532); integrate on one branch and check both sides agree.
-- **Shared files** (`Directory.Packages.props`, `README.md`, `Kalla.slnx`, `.gitignore`): small PR, append-only.
-- **Release notes are files, not edits** (user, 2026-11-17): a pull request adds `changes/<branch>.md` (CHANGELOG) and,
-  when an operator has something to do, `changes/<branch>.upgrade.md` (upgrade guide) instead of appending to
-  *Unreleased*, where any two pull requests conflicted (#817 and #827). `scripts/unreleased.py` checks and folds them. Secrets never go into the repo, a log or a chat. Verify claims against real sources.
-- **No backward compatibility before production:** no migration data steps for old rows (fix development data by
-  hand, and put the SQL in the PR), no shims.
+- **Shared files** (`Directory.Packages.props`, `README.md`, `Kalla.slnx`, `.gitignore`): small pull request,
+  append-only for the streams.
+- **Release notes are files, not edits** (user, 2026-11-17): a pull request adds `changes/<branch>.md` and, when an
+  operator has something to do, `changes/<branch>.upgrade.md`; `scripts/unreleased.py` checks and folds them.
+- **Secrets never go into the repo, a log or a chat.** Verify claims against real sources.
+- **No backward compatibility before production**, but an upgrade path for deployments where one is feasible
+  (`AGENTS.md`, *Conventions*).
 
 ## Local stack (this machine)
 
-- **State at handover:** the dev AppHost is **stopped**. No ClamAV container exists any more (the "persistent" one
-  was gone before session 31 started; its signatures are still in the volume `kalla-clamav-db`). Migrations through
-  `AnswerLengthFromModel` are applied on the dev database; the next start applies the rest (`KeywordStatistics`,
-  `UploadScannedAt`, `GatewayKeys`, `GatewayModelLimitsSource`, `DailyUsage`, `ObjectGatewayKeys`,
-  `DailyTotalsWithoutCost`). After `UploadScannedAt` every existing upload row has `ScannedAt` null: run the
-  upgrade guide's one-line `UPDATE` so scanned files don't read as unscanned. It won't start until the user secrets
-  change (*Environment notes*). `Settings.Chat` is `{}`. The local parser image is older than #526 (no LibreOffice):
-  **rebuild it before demoing `.doc`/`.xls`/`.ppt`/`.rtf`**.
-- **A stack on the FakeGateway starts without touching the user secrets or the dev data** (done in session 31 to check
-  #599): `export FakeGateway__Enabled=true Seed__Enabled=false Parser__Mode=off Render__Mode=off
-  OpenWebUi__Enabled=false DevelopmentVolumes__Postgres=<a throwaway volume name>` (add `ClamAv__Mode=off` to skip
-  ClamAV), then `aspire start …`; afterwards `aspire stop --all` and `docker volume rm` the volume.
-- Start: `export Seed__Enabled=false; aspire start --apphost src/Kalla.AppHost/Kalla.AppHost.csproj
-  --non-interactive` (Docker up: `docker info`). Stop: **`aspire stop --all --non-interactive`**. Restart one service:
-  `aspire resource worker restart --apphost … --non-interactive`.
-- **E2E locally without pwsh:** `aspire stop --all`; `docker volume rm kalla-e2e-postgres`; export
+- **State (2026-11-21):** the dev AppHost is stopped and has not run since the rename. Its data is still under the
+  old names: user secrets under the id `ume-rag-apphost-dev` (the AppHost now reads `kalla-apphost-dev`, which is
+  empty), volumes `ume-rag-m1-postgres` (named by the old secret `DevelopmentVolumes:Postgres`),
+  `ume-rag-openwebui-data` and `ume-rag-clamav-db` (the AppHost now mounts `kalla-openwebui-data` and
+  `kalla-clamav-db`), helper scripts in `~/ume-rag-tools/`. Moving them over is the user's call. The old secrets
+  also hold a `Gateway:Keys` section, `Parameters:gateway-key-{eu,onprem,external}` and `Parameters:data-api-key`,
+  which the AppHost refuses or no longer reads (`docs/local-development.md` lists the current parameters).
+- **What the development data holds** (department DoIT; in `ume-rag-m1-postgres`): the collections `turkos` (1,166
+  documents, about 10,000 chunks, a 100-question evaluation set), `renderer-demo`, `a13-klimatkollen`, `a19-e-umea`
+  and `Personalhandbok` (an upload source made as test data); the assistant `turkos`; the embedding profile
+  `pilot-embedding`; crawl `hostOverrides` for `www.umea.se` only (2 req/s, 2 connections).
+- **A stack on the FakeGateway needs no secrets and no dev data:** `export FakeGateway__Enabled=true
+  Seed__Enabled=false Parser__Mode=off Render__Mode=off OpenWebUi__Enabled=false ClamAv__Mode=off
+  DevelopmentVolumes__Postgres=<a throwaway volume name>`, then start; afterwards stop and `docker volume rm` it.
+- **Start:** `aspire start --apphost src/Kalla.AppHost/Kalla.AppHost.csproj --non-interactive` (Docker up:
+  `docker info`). **Stop:** `aspire stop --all --non-interactive`; it returns before the persistent containers have
+  stopped, so wait a few seconds before `docker volume rm`. One service: `aspire resource worker restart --apphost …`.
+  Logs and states: `aspire logs worker`, `aspire describe --apphost …`. The CLI is at
+  `~/.nuget/packages/aspire.cli.linux-x64/13.6.1/tools/net10.0/linux-x64/aspire` (not on PATH; it starts the 13.6.5
+  AppHost fine).
+- **Browser tests locally without pwsh:** stop the stack; `docker volume rm kalla-e2e-postgres`; export
   `DevelopmentVolumes__Postgres=kalla-e2e-postgres Seed__Enabled=true FakeGateway__Enabled=true E2E__Enabled=true`;
-  `aspire start --apphost src/Kalla.AppHost/Kalla.AppHost.csproj --non-interactive`; `aspire wait admin-ui
-  --apphost …`; in `tests/e2e`: `npm ci`, `npx playwright install chromium`, `npx playwright test` (9 tests, ~10 min).
-- Aspire CLI: `~/.nuget/packages/aspire.cli.linux-x64/13.6.1/tools/net10.0/linux-x64/aspire` (not on PATH).
-  `aspire logs worker --non-interactive`; `aspire describe --apphost …` shows resource states.
-- Ports: dashboard `https://localhost:17470`; **admin UI `https://localhost:5174`** (user `rag-platform-admin`); api
-  7401, admin API 7402, worker 7403; **Open WebUI `http://localhost:7410`**, Keycloak 7411, Postgres 7412, parser 7413,
-  ClamAV 7414, **renderer 7417**. Platform objects are under `/plattform/<resource>` (e.g. `/plattform/settings`).
-- **Parser** goes cold after 15 idle minutes; `PARSER_IDLE_STOP_S=0` / `NER_IDLE_STOP_S=0` keep it warm.
-- **Data:** department DoIT.
-  - **Collections:**
-    - `turkos`: 1,166 live documents, about 10,000 chunks, a 100-question evaluation set;
-    - `renderer-demo`: quotes.toscrape.com, `browser` and `http`;
-    - `a13-klimatkollen`: 25 pages, browser;
-    - `a19-e-umea`: 137 pages, browser, no `readySelector`;
-    - **`Personalhandbok`** (new, internal): one *Files* source with `Handbok/HR/…`, `Handbok/IT/…`,
-      `Handbok/kontorstider.txt` and `IT/VPN/vpn-guide.md` indexed, plus `IT/VPN/tom-rubrik.md` refused
-      (`parse.empty`). Made as test data; keep it as a demo or delete it.
-  - **Assistant:** `turkos` v2 on `claude-haiku-5-5`.
-  - **Crawl settings:** `hostOverrides` only `www.umea.se` (2 req/s, 2 connections).
-  - **Gateway models:** manual mirror rows `claude-haiku-5-5`, `claude-opus-5-5` and `Cohere-rerank-v5-fast`; model
-    sync is off locally, so the embedding profile's model shows "Not among the gateway's models" (expected).
-  - **Embedding profile:** `pilot-embedding`, in use, unchanged (a **Test** call was made, no save).
-- **Scripting uploads through the admin API:** upload slots are numbered from 1 (`PUT /api/upload-batches/{id}/files/1`), and the commit takes the slot numbers (`{"files": [1, 2, …]}`); an empty commit answers `upload_batch_too_large` (1 to 100 files). A published assistant needs a description, a contact and a gateway key (V39) whose residencies reach the collection's embedding model too. `aspire stop --all` returns before the persistent containers have stopped: wait a few seconds before `docker volume rm`. `dotnet dev-certs https --export-path x.pem --format Pem --no-password` also writes `x.key` (the dev certificate's private key): delete it afterwards.
-- **Admin API scripting:** `~/kalla-tools/` (outside the repo, no secrets in it): `admin.py` (BFF login from the
-  AppHost user secret, XSRF; `python3 -I admin.py GET /api/assistants`, or `import admin; admin.call(m, path, body)`;
-  raw uploads through `admin.req` with `X-XSRF-TOKEN` and `X-File-Name`), `pf.py '<preflight JSON>'`, `runwait.py
-  <sourceId> [start]`, `chat.py <n> <label> <out.json> [gap s]`. Run them from that folder.
-- Feedback importer: every minute, user secret `Parameters:openwebui-admin-api-key`. Logins:
-  `~/kalla-demo-login.txt` (mode 600; port 7410). Draft gold sets: `~/kalla-gold-draft-*.csv`, `plans/gold-set/`.
-- Postgres: `docker exec -e PGPASSWORD="$(docker exec <postgres-…> printenv POSTGRES_PASSWORD)" <postgres-…> psql -h
-  localhost -U postgres -d ragdb` (schemas `config`, `content`, `chat`).
-- Local images: `kalla/renderer:ci` (also `kalla.local/renderer:ci`; the container test uses
-  `KALLA_TEST_RENDERER_IMAGE=kalla.local/renderer:ci`), `kalla.local/clamav:dev`, `kalla.local/parser:ci`
-  (pre-#526), `kalla.local/postgres:ci`.
-- `~/git/llmgateway`'s working tree is still at v0.9.0; `origin` is fetched through **v0.10.0** (tag). Read the
-  gateway with `git show v0.10.0:<path>`, or pull first. Where its docs and its code differ, follow the code.
-- Worktrees: none besides the main clone (the agents' worktrees and the `../rag-*` ones were removed).
-- The 13.6.1 CLI above starts the 13.6.5 AppHost fine (checked this session).
+  start; `aspire wait admin-ui --apphost …`; in `tests/e2e`: `npm ci`, `npx playwright install chromium`,
+  `npx playwright test` (about 10 minutes).
+- **Ports:** dashboard `https://localhost:17470`; admin UI `https://localhost:5174` (user `rag-platform-admin`); api
+  7401, admin API 7402, worker 7403; Open WebUI `http://localhost:7410`, Keycloak 7411, Postgres 7412, parser 7413,
+  ClamAV 7414, renderer 7417. Platform pages are under `/plattform/<resource>`.
+- **The parser** goes cold after 15 idle minutes; `PARSER_IDLE_STOP_S=0` and `NER_IDLE_STOP_S=0` keep it warm.
+- **Scripting the admin API:** `~/ume-rag-tools/` (outside the repo, no secrets in it): `admin.py` (BFF login from
+  the AppHost user secret, XSRF), `pf.py`, `runwait.py`, `chat.py`; run them from that folder. Upload slots are
+  numbered from 1 (`PUT /api/upload-batches/{id}/files/1`) and the commit takes the slot numbers; an empty commit
+  answers `upload_batch_too_large`. A published assistant needs a description, a contact and a gateway key (V39)
+  whose residencies reach the collection's embedding model too.
+- **Postgres:** `docker exec -e PGPASSWORD="$(docker exec <postgres-…> printenv POSTGRES_PASSWORD)" <postgres-…> psql
+  -h localhost -U postgres -d ragdb` (schemas `config`, `content`, `chat`).
+- **UI checks on realistic data:** copy the dev volume to a throwaway one (`docker run --rm -v <dev>:/from:ro -v
+  <copy>:/to alpine cp -a /from/. /to/`), start the FakeGateway stack on it, and remove it afterwards.
+- **Fors:** `~/git/llmgateway` is a clone of `thekim1/fors` on a merged feature branch, fetched through `v0.12.1`:
+  read a release with `git show v0.12.1:<path>`. Where its documents and its code differ, follow the code.
 
 ## Lessons
 
-Development and CI gotchas are in [`docs/local-development.md`](../../docs/local-development.md) (*Working notes*) and
-[`docs/ci-runner.md`](../../docs/ci-runner.md) (*Working with the workflows*), where stream agents read them too. What only the
-main session needs:
+### Pull requests and GitHub
 
-- **Stacked PRs:** merging the base PR with `--delete-branch` *closes* the stacked PR instead of retargeting it (#579,
-  again #732 in session 38). **Before every merge, run `gh pr list --base <branch-being-merged>`**; retarget each hit
-  first (`gh pr edit <n> --base main`). To recover, push the old base sha back to its branch, reopen, retarget, or open
-  a replacement PR from the same branch (#740). Better: branch dependent work from the other branch but target `main`,
-  and rebase it after the first one is squash-merged (#712 on #738).
-- **After a GitHub outage** runs can sit `queued` with jobs that have a start time but no runner. Cancel and re-run
-  them (the user allows cancelling stuck CI).
-- **Check a watcher's exit code before merging:** `gh run watch … --exit-status; echo exit=$?` printed `exit=1` and
-  I merged anyway (#582 was docs only; the failure was the flaky test of #584). Read the result first.
-- An `a/` branch may not touch `plans/**` (`ownership`, main's path): put design lines in a direct `main` commit.
-- The auto-mode classifier blocks `commit --amend` + force-push even on your own branch: push a follow-up commit.
-- New worker background services open connections on the worker role: count them against data-model §1.1's budget
-  (pool 10 + LISTEN + 1); `DispatcherTests.Under_load_…_role_cap` catches an extra session.
-- **`scripts/check-doc-refs.py`** resolves a bare `name.md §N` by file name: a new file with a common name (`plan.md`)
-  captures old references. Give plan files distinctive names.
-- The `implementor` agent refuses git writes (commit, rebase): review its diff, commit and rebase yourself.
-- **`gh pr merge --delete-branch` also removes the branch's local worktree.** Stop any stack running from that
-  worktree first (`aspire stop --all`), and merge without `--delete-branch` while an agent still reads it.
-- **The auto-mode classifier** blocks force-pushing another session's branch and approving a PR that contains your
-  own commit. To bring stream b's PR up to date, push a plain merge commit (or `gh pr update-branch <n>`); then the
-  merge needs the user's go-ahead or stream b.
-- A new GitHub advisory turns every backend job red through `dotnet list package --vulnerable` (NU1903) with no code
-  change: check the audit step first when an unrelated PR fails.
-- Squash-merged branches look unmerged to git: check the PR state (`gh pr list --state all`) and `git rev-list
-  --count main..<branch>` before `git branch -D`.
-- When editing a stream's queue on `main`, `pull --rebase` first: stream B edits queues too.
-- **Browser checks with the Playwright MCP:**
-  - The admin UI's dev certificate isn't trusted. Open a new context with `ignoreHTTPSErrors: true` inside
-    `browser_run_code_unsafe`.
-  - State doesn't survive between calls, so save `storageState` to a scratch file after logging in and reuse it.
-  - The code can't read files. To log in without the password entering the transcript, serve it once from a
-    short-lived `python3 -m http.server --bind 127.0.0.1` in a mode-700 scratch folder and read it with
-    `page.request.get`. Then stop the server and delete the file.
-  - Don't `pkill -f` a pattern that also matches your own shell command.
-- **Release dry runs:**
-  - The runners share one user's `~/.docker/config.json`; a tag release's ghcr login used to stay there and, once
-    expired, broke a later dry run's pulls ("failed to fetch oauth token: denied"). #572 gives the build job its own
-    `DOCKER_CONFIG`. The stale entry is still in that home: other workflows that pull from ghcr may hit it.
-  - When a run fails at an artifact upload with `Unexpected token '<'`, check https://www.githubstatus.com first.
-  - The smoke test can't re-run `init-deployment.sh` on the runner (not root; the files belong to the containers'
-    users after the first run); verify.yml's deploy-checks test the re-run.
-  - Measure before optimising: v0.3.0's smoke test took 1 min 51 s; the time was in image builds and pushes.
-  - Until the release-speed change (session 39), a dry run with `e2e=true` skipped `build` when e2e failed, so neither
-    smoke test ran (0.6.0: the Portainer boot first ran at the tag and failed, #749). Now `build` runs beside verify and
-    parser, and e2e after all three.
-  - The shared `~/.docker/config.json`'s stale ghcr.io login also denied the e2e stack's Open WebUI pull (#748): every
-    workflow that pulls from ghcr.io sets its own `DOCKER_CONFIG`.
-  - **Run `e2e.yml` at least once between releases.** It hadn't run from 2026-11-08 to 11-15 and seven UI changes had
-    drifted from the pilot spec, which took nine CI rounds to clear; the accessibility spec found real target-size bugs.
-  - An inline (`content:`) config can't go into a `read_only` service: copy the file into `kalla-config` from the
-    bootstrap instead (as `kalla-proxy`, `kalla-openwebui-setup`).
-  - **Test a stack-file or boot-test fix with the boot-only run, not a dry run** (#752, session 39):
-    `gh workflow run release.yml --ref <branch> -f portainer_boot=X.Y.Z` boots `<branch>`'s stack against X.Y.Z's
-    images on ghcr.io in about 2 minutes (a failed tag run has already pushed its images). 0.6.0's `--wait` fix went
-    green this way on the first try, instead of a 30-minute dry run.
-  - **The pin pull request that `release.yml` opens starts no checks** (a pull request opened with the workflow's token
-    triggers no workflow): `gh pr close <n>` and `gh pr reopen <n>`, wait for `deploy-checks`, merge (#789, 0.7.0).
-  - **The boot-only run needs that version's Källa images on ghcr.io.** For a change that needs new images (the
-    wizard's stage 2 against 0.6.0's images), only a dry run from the branch shows the boot test (session 44).
-  - `docker compose up --wait` fails on a one-shot that exits 0 unless a service waits for it
-    (`service_completed_successfully`). The boot test waits only on the long-running services (#751).
-- **Playwright sign-in on the admin UI:** click `locator('a,button').filter({ hasText: 'Sign in' }).last()` and wait for
-  the Keycloak URL together with the click.
-- **Agents as stream-a implementors** work well with `isolation: worktree`: review the diff, commit on an `a/` branch,
-  rebase on `origin/main`, open the PR, watch CI, remove the worktree, then merge with `--delete-branch`. Check that a
-  short CI job really ran its steps (a 25 s `deploy-checks` did).
-- **Gateway docs vs code:** the gateway's `docs/integrations.md` and OpenAPI said 403 where the code answers 401. Check
-  behaviour Källa depends on in the code at the tag.
-- **Agent worktrees start from local `main`, not from the branch that is checked out.** An agent told "your branch
-  contains X" didn't have X (A-36 on B-47 part 1): merge the prerequisite first, or tell the agent to check
-  `git log -1` and name the commit it needs. Both agents coped (one applied the missing files unchanged).
-- **Bringing an agent's work to a PR:** commit it in the agent's worktree, `git worktree add ../rag-<id> -b <branch>
-  origin/main`, `git cherry-pick -n <agent branch>`, resolve, build, re-run the tests there, commit, push. Afterwards
-  `git worktree unlock` and `remove --force` the agent's worktree and delete its `worktree-agent-…` branch.
-- **`src/admin-ui/src/utils/labels.ts` and `messages.ts` are stream b's paths**, so a stream-a UI item that needs a
-  text goes on a `main-session/` branch (A-33, #609), or `ownership` fails.
-- **Regenerating the Portainer stack:** `deploy/portainer/build-stack.sh` (the gateway's latest release asset, which
-  pins the gateway's images; or a tag, or a local file). Any PR that changes `deploy/postgres/app-roles.sql` or the
-  template leaves the stack stale until someone runs it (#605, #608; #611 fixed it). Källa's image pins in the
-  template follow each release (#657 set 0.5.0). **The Open WebUI profile (#657) was merged without a boot test**
-  (user, 2026-11-13): the first VM deploy is its test; suspect the entrypoint wrapper, the CA bundle and the data
-  volume's owner first. **Booted:** the user deployed 0.5.0 with Portainer, `openwebui` and `clamav` on (2026-11-13).
-- **Waiting on a PR's checks in a loop:** test for an empty `conclusion`, not for `status != COMPLETED`; right after a
-  push the rollup lists checks whose status is already final-looking while the conclusion is still empty.
-- **A `cd` into an agent's worktree makes it the session's working directory.** Use `git -C <path>` for other
-  worktrees, and start each command with `cd /home/crotalus/research/rag`.
-- **`rm` with a shell variable in the path is stopped by a safety check.** Use literal paths, or `git rm` for tracked
-  files.
-- **A browser check without the password in the transcript:** a Node script under the scratchpad that requires
-  `tests/e2e/node_modules/playwright`, reads `Parameters:dev-user-password` from the AppHost user secrets itself and
-  writes screenshots (session 32, A-38). Simpler than the Playwright MCP route.
-- The Edit tool fails on a file not Read in this session. A commit made in the same step then goes out without the
-  change, so check `git show --stat` after a combined edit-and-commit.
+- **Stacked pull requests:** merging the base with `--delete-branch` *closes* the stacked one instead of retargeting
+  it (#579, #732). Before a merge run `gh pr list --base <branch-being-merged>` and retarget each hit. Better: branch
+  dependent work from the other branch but target `main`, and rebase after the first is squash-merged.
+- **`gh pr merge --delete-branch` also removes the branch's local worktree.** Stop any stack running from it first,
+  and merge without `--delete-branch` while an agent still reads it.
+- **Squash-merged branches look unmerged to git:** check the pull request's state and `git rev-list --count
+  main..<branch>` before `git branch -D`.
+- **Read a watcher's result before merging:** `gh run watch … --exit-status; echo exit=$?` printed `exit=1` and the
+  merge went ahead anyway (#582). In a polling loop test for an empty `conclusion`, not for `status != COMPLETED`.
+- **The permission check** also stops `commit --amend` with a force push (push a follow-up commit) and a force push
+  to another session's branch (push a plain merge commit, or `gh pr update-branch <n>`).
+- **Switch the `gh` account in a command of its own:** chained with `&&` behind a command that failed it did not
+  run, and what came after went out under the wrong account.
+- **A branch that joins a rebuilt line to its old one loses every approval** (#906): the release preparation was
+  rebuilt on the new `main` and merged with its first version, and GitHub dismissed two approvals within seconds
+  with *The merge-base changed after approval*, with no push in between. The pull request's stored base
+  (`gh api …/pulls/<n> --jq .base.sha`) was still the old `main`; that this is the cause is a reading, not checked.
+  Rebuild such a branch as a new branch and a new pull request.
+- **`gh pr edit` fails here** (GitHub's *Projects (classic)* error) and changes nothing: edit a title or body with
+  `gh api -X PATCH repos/thekim1/kalla/pulls/<n> -f title=… -F body=@file`.
+- **After a GitHub outage** runs can sit `queued` with jobs that have a start time but no runner: cancel and re-run
+  them (the user allows cancelling stuck CI). A run that fails at an artifact upload with `Unexpected token '<'`:
+  look at https://www.githubstatus.com first.
+
+### CI and releases
+
+- **A new GitHub advisory turns every backend job red** through `dotnet list package --vulnerable` (NU1903) with no
+  code change: look at the audit step first when an unrelated pull request fails.
+- **Run `e2e.yml` at least once between releases, and only with the runners idle.** Left alone for a week it drifted
+  by seven UI changes and took nine rounds to clear; beside a pull request's `backend` job Chromium loses its page
+  (`net::ERR_NETWORK_CHANGED`).
+- **Six pull requests at once fill both runners for an hour:** open the small ones first, and dispatch a dry run only
+  after the pull request's own checks are done. Under that load `backend` and vitest fail at random in untouched
+  tests: run again alone before calling a failure real.
+- **Test a stack-file or boot-test fix with the boot-only run** (`gh workflow run release.yml --ref <branch> -f
+  portainer_boot=X.Y.Z`, about 2 minutes). It uses that version's images on ghcr.io, so a change that needs new
+  images takes a dry run from the branch.
+- **The pin pull request that `release.yml` opens starts no checks** (it is opened with the workflow's token): close
+  and reopen it, wait for `deploy-checks`.
+- **An upgrade's steps are not final until the upgrade test has run them** (0.9.0): in the joined Portainer stack
+  `kalla-bootstrap` waits for the gateway's `migrations`, so whatever makes those fail keeps all of Källa from
+  starting, `kalla-postgres` included. The upgrade as first written was a dead end that only the dry run showed.
+- **A boot test's fixture is the earlier release's own example file with real-looking values:** 0.5.1's kalla-admin
+  refuses a platform-admin group that doesn't start with `rag-` and restarts for ever.
+- **Workflows:** a step's `if:` without a status function implies `success()`, so a step meant to run after a
+  failure needs `!cancelled() &&` (#774). The runners have no `gh`: download a release asset with
+  `scripts/ci/release-asset.sh`. Every workflow that pulls from ghcr.io sets its own `DOCKER_CONFIG`, because the
+  runners share one user's `~/.docker/config.json` and a stale login there denies pulls (#572, #748).
+- **Compose:** `up --wait` fails on a one-shot that exits 0 unless a service waits for it
+  (`service_completed_successfully`); the boot test waits only on the long-running services (#751). An inline
+  (`content:`) config can't go into a `read_only` service: copy the file into `kalla-config` from the bootstrap.
+- **A stack-file refactor is shown by rendering, not by reading** (#800): render the committed and the regenerated
+  `compose.portainer.yaml` with `docker compose config --format json` and compare; only the embedded bootstrap
+  script may differ. `deploy/portainer/build-stack.sh` regenerates the stack; a change to
+  `deploy/postgres/app-roles.sql` or the template leaves it stale until someone runs it.
+- **Shell tests that pass here and fail on the runner:** `join` and `sort` follow the locale's collation (compare by
+  exact name in `awk`, or set `LC_ALL=C`), and `producer | grep -m1` fails under `pipefail` when grep closes the
+  pipe early (read the output into a variable first).
+- **A slow test project: compare one process with two before adding collections** (#775): the collections of one
+  `Kalla.AdminApi.Tests` process wait for one another, so CI runs it as five processes
+  (`scripts/ci/backend-tests.sh`). Database classes go into one of `AdminDatabaseGroup1`..`4`, the shortest by
+  measured time; the test executable's `-xml <file>` gives every test's time.
+
+### Code and deployment
 
 - **Design sections are never renumbered:** code and plans cite §-numbers (about 2,800 times in `src/` and
   `tests/`). A section whose content moves keeps its number and heading with a one-line pointer; a new section takes
   the next free number. Cite stable IDs (V39, a rule's name) where one exists.
-- **AdminApi.Tests database classes** go into one of `AdminDatabaseGroup1`..`4`, the shortest by measured time
-  (#648); the per-project test times are in the `backend` job log's *Test run summary*.
-- **UI checks on realistic data** (session 37): copy the dev volume (`kalla-m1-postgres`) to a throwaway one with
-  `docker run --rm -v kalla-m1-postgres:/from:ro -v <copy>:/to alpine cp -a /from/. /to/`, start the FakeGateway stack
-  on it (*Local stack*), and remove it afterwards. The Playwright MCP browser rejects the dev certificate: drive a Node
-  script with `tests/e2e/node_modules/playwright` and `ignoreHTTPSErrors: true`, reading the login password from the
-  user secret inside the script, never on a command line.
-- **Parallel implementor agents** (session 37): some refuse to commit (their rules say the user commits), so commit
-  their work yourself after reading the diff. Four agents testing at once push the load to ~37 and vitest then fails
-  at random in untouched specs: rerun alone before calling a failure real. `uv run` in `src/parser` leaves a `.venv`
-  that breaks `check-doc-refs.py`: delete it after use.
-- **Run `e2e.yml` only with the runners idle** (session 40): a PR's `backend` job on the other runner creates and
-  removes Docker networks, and Chromium then loses its page with `net::ERR_NETWORK_CHANGED`. Wait for the PR's checks,
-  then dispatch.
-- **A workflow step's `if:` without a status function implies `success()`:** a step meant to run after an earlier
-  failure needs `!cancelled() &&` (or `always()`), also when it tests another step's `outcome` (#774).
-- **An independent review agent for security-critical code** (session 40, S3): give it the code and the threat model,
-  not your conclusions; it found a secret-exfiltration path the main session's own reading missed. Check each finding
-  in the files before acting.
-- **Drive a new page in a real browser before the PR** (session 40): a Node script with `tests/e2e/node_modules/playwright`
-  on a throwaway stack found a usability gap that 400 unit tests didn't. For the setup wizard: `Setup__Try=true`
-  (HANDOVER has the recipe).
-- **Briefing implementors:** say which facts are assumptions. Two of the main session's own brief statements were wrong
-  in session 40 ("a new database has no settings row"; the first "declared deployment" rule) and came back as built.
+- **`scripts/check-doc-refs.py`** resolves a bare `name.md §N` by file name: a new file with a common name captures
+  old references, so give plan files distinctive names. A `.venv` left by `uv run` in `src/parser` breaks it.
+- **A rename must not touch what is stored** (#902, thekim1/fors#116): Data Protection's application name and
+  purposes, AES-GCM associated data, HMAC contexts, check-constraint values and applied migrations are format, not
+  product text. Fresh-database tests cannot see the damage. Review a rename by grepping the old name in
+  `CreateProtector`, `SetApplicationName`, `GetBytes(` and `Migrations/`.
+- **SQL in `src/Kalla.Infrastructure/` uses positional parameters** (`$1`): the API's SQL contract prepares every
+  string constant there and reads `@name` as a column (`SqlSchemaContractTests`; regenerate with
+  `KALLA_UPDATE_CONTRACTS=1`).
+- **New worker background services open connections on the worker role:** count them against data-model §1.1's
+  budget; `DispatcherTests.Under_load_…_role_cap` catches an extra session.
+- **`deploy/.env` holds every value in single quotes:** a script that reads a value with `sed` compares the quotes
+  too (#905). Read a value the way `init-deployment.sh`'s `get` does.
+- **What marks a copy as done is written last** (#905). Test a resumable step by making it fail part-way and running
+  it again.
+- **A pinned base image with no newer build:** pin the one fixed package in our own Dockerfile, with a comment that
+  the line goes when the base has the fix. `docker buildx imagetools inspect` shows whether a tag was rebuilt.
+- **`labels.ts` and `messages.ts` are stream b's paths:** a stream-a UI item that needs a text goes on a
+  `main-session/` branch.
+- **Gateway documents and code can differ** (403 documented where the code answers 401): check the behaviour Källa
+  depends on in the code at the tag.
 
-- **A slow test project: compare one process with two before adding collections** (session 41, #775).
-  `Kalla.AdminApi.Tests` took the same 4 minutes with four and with eight database collections; a class took 29 s
-  alone and 66 s beside three others; two processes side by side took 148 s. The collections of one process wait for
-  one another (not CPU, thread pool, `fsync` or GC), so CI runs the project as five processes
-  (`scripts/ci/backend-tests.sh`). Measure with the test executable itself: `-xml <file>` gives every test's time,
-  `-class`/`-class-` pick the classes; `KALLA_TEST_POSTGRES_TMPFS=1` doesn't start with the `:ci` Postgres image.
+### Agents
 
-- **Shell tests that pass here and fail on the runner** (session 46, twice): `join` and `sort` pair names by the
-  locale's collation (one that ignores punctuation took `secrets/.openwebui-jwt-secret` and
-  `secrets/openwebui/jwt-secret` for the same file): compare by exact name in `awk`, or set `LC_ALL=C`. And
-  `producer | grep -m1` under `pipefail` fails when grep closes the pipe before the producer is done: read the output
-  into a variable first.
-- **A stack-file refactor is shown by rendering, not by reading** (session 46, #800): render the committed and the
-  regenerated `compose.portainer.yaml` with `docker compose config --format json` (the example's variables, every
-  profile) and compare the JSON; only the embedded bootstrap script may differ.
-- **A second agent's reading finds what the first one built wrong** (session 46): the guides agent, told to verify
-  every command against the scripts, reported that #800's `--gateway-ca-dir` mounted the gateway's key directory.
-  Ask a documenting agent for "wrong messages and side effects you noticed" in its report.
-- **A `cd` into an agent's worktree moves the session there for good** (the harness then refuses a `cd` back): work
-  on `main` with `git -C ~/research/rag` and absolute paths, and reuse the worktree for the next branch
-  (`git checkout -B <branch> origin/main`).
+- **Brief:** say which facts are assumptions (two wrong statements in a brief came back as built). For a review, give
+  the code and the threat model, not your conclusions, and ask for producer and consumer read on both sides; check
+  each finding in the files before acting on it. A second agent's reading finds what the first one built wrong.
+- **Agent worktrees start from local `main`,** not from the branch that is checked out: merge the prerequisite first,
+  or name the commit the agent needs.
+- **Implementor agents often refuse to commit:** read the diff and commit yourself. To bring the work to a pull
+  request: `git worktree add ../rag-<id> -b <branch> origin/main`, `git cherry-pick -n <agent branch>`, build, re-run
+  the tests there, commit, push; then remove the agent's worktree and its `worktree-agent-…` branch.
+- **Splitting a feature into an API agent and a UI agent** against a contract written first in the design worked
+  well (#532): integrate on one branch and check both sides agree.
 
-- **`main` is protected since 2026-11-16** (ruleset "Protect main"): every change is a pull request with one
-  approving review; the main session can't approve its own or bypass. Never `gh pr merge --admin`. Design and handover
-  changes go on a `main-session/` branch; a design line that belongs to a code change goes into that pull request.
-- **SQL in `src/Kalla.Infrastructure/` uses positional parameters** (`$1`), also in new non-EF code: the API's SQL
-  contract prepares every string constant there and reads `@name` as a column (session 47; run
-  `tests/Kalla.Api.Tests` `SqlSchemaContractTests`, regenerate with `KALLA_UPDATE_CONTRACTS=1`).
-- **The runners have no `gh`:** a workflow step downloads a release asset with `scripts/ci/release-asset.sh`.
-- **A boot test's fixture is the earlier release's own example file with real-looking values:** 0.5.1's kalla-admin
-  refuses a platform-admin group that doesn't start with `rag-` and restarts for ever (session 47).
-- **Six pull requests at once fill both runners for an hour** (session 47): open the small ones first, and dispatch a
-  dry run only after the pull request's own checks are done.
+### Browser checks and this harness
 
-- **A rename must not touch what is stored** (session 50, #902 and thekim1/fors#116): Data Protection's application
-  name and purposes, AES-GCM associated data, HMAC contexts, check-constraint values and applied migrations are
-  format, not product text. Both products' renames changed them, which an upgraded install would have paid for
-  with its secrets and encrypted blobs; fresh-database tests cannot see it. Review a rename by grepping the old
-  name in `CreateProtector`, `SetApplicationName`, `GetBytes(` and `Migrations/`.
-- **A second agent's sweep of a large diff** (session 50, #902: 1,353 files): give it the stated intent and the list
-  of deliberate exceptions, ask for producer/consumer mismatches with both sides read, and check each finding in
-  the files before posting. It found the data-losing ones; the main session's own reading found the Kubernetes one.
+- **Drive a new page in a real browser before the pull request:** a Node script under the scratchpad that requires
+  `tests/e2e/node_modules/playwright` with `ignoreHTTPSErrors: true`, reads `Parameters:dev-user-password` from the
+  AppHost user secrets itself (never on a command line) and writes screenshots. It found a usability gap that 400
+  unit tests didn't. The Playwright MCP browser rejects the dev certificate.
+- **Sign-in in a script:** click `locator('a,button').filter({ hasText: 'Sign in' }).last()` and wait for the
+  Keycloak URL together with the click.
+- **A `cd` into another worktree can move the session there for good:** use absolute paths and `git -C <path>`.
+- **`rm` with a shell variable in the path is stopped by a safety check:** use literal paths, or `git rm`.
+- **The Edit tool refuses a file outside the working directory that was not read first.** A commit made in the same
+  step then goes out without the change: check `git show --stat`.
+- `dotnet dev-certs https --export-path x.pem --format Pem --no-password` also writes `x.key`, the dev certificate's
+  private key: delete it afterwards. Don't `pkill -f` a pattern that also matches your own shell command.
 
-- **Look at the open pull requests before each step, not only at the start** (session 51): `thekim1`'s machine
-  opened the 0.9.0 release preparation (#906) while the main session was doing the items before it, and merged the
-  main session's green pull requests itself within the half hour. Before approving as `Crotalus`, read the pull
-  request's `state`: #905 and #907 were merged already, and `mergeable: UNKNOWN` was the sign. Say on the other
-  machine's pull request what you are doing before you write something it may also be writing.
-- **Switch the account in a command of its own** (session 51): `gh auth switch` chained with `&&` behind a command
-  that failed did not run, and the approval after it went out under the wrong account (GitHub refused it).
-- **`deploy/.env` holds every value in single quotes** (`init-deployment.sh` writes them so): a script that reads a
-  value with `sed` and matches it with `case` compares the quotes too. `upgrade-to-0.9.sh` never kept the backup
-  path that way (#905). Read a value the way `init-deployment.sh`'s `get` does.
-- **What marks a copy as done is written last** (session 51, #905): the Portainer copy of the old volumes wrote the
-  pepper first and took it as "done", so a copy that failed after it was never done again. Test a resumable step by
-  making it fail part-way (a directory where a file goes) and running it again.
-- **In the joined Portainer stack `kalla-bootstrap` waits for the gateway's `migrations`** (the manifest's keys):
-  whatever makes those fail keeps all of Källa from starting, `kalla-postgres` included. The 0.9.0 upgrade as first
-  written (update, then rename the roles in a console on `kalla-postgres`) was a dead end for that reason, and only
-  the dry run's upgrade test showed it. An upgrade's steps are not final until that test has run them.
-- **A pinned base image with no newer build** (session 51, pgvector and `zlib1g`): pin the one fixed package in our
-  own Dockerfile, with a comment that the line goes when the base has the fix. `docker buildx imagetools inspect`
-  shows whether a tag was rebuilt; `apt-get -s upgrade` in the base shows what else an upgrade would move.
-- **On this machine the session does not approve as `Crotalus`** (session 52, #906): with the user's decision on
-  record and their go-ahead in the conversation, the permission check still stopped it, first the account switch and
-  then the approval itself. The approval is the user's own action: give them the one line to run
-  (`gh auth switch -u Crotalus && gh pr review <n> --approve && gh auth switch -u ume-nichlas`) or the browser.
-- **A pull request whose branch joins a rebuilt line to its old one loses every approval** (session 52, #906): the
-  release preparation was rebuilt on the new `main` and merged with its first version (`757153f3`), so the pull
-  request's stored base stayed at the old `main` (`gh api …/pulls/<n> --jq .base.sha`) while the merge base was the
-  new one. GitHub dismissed two approvals within seconds with *The merge-base changed after approval*, with no push
-  in between, and a third would have gone the same way. That the stored base is the cause is a reading, not checked.
-  Rebuild such a branch as a new branch and a new pull request. Others report that closing and reopening clears it.
-- **Pushing in Fors's clone** needs the `gh` credential helper as well (*Environment notes*, *Git over HTTPS*): a
-  plain `git push` there waits for the Windows credential manager and never returns (session 52, two minutes lost).
-
-## Plan files (how they are kept, M-14)
+## Plan files (how they are kept)
 
 - **The plan ahead is only in `plans/roadmap.md`.** HANDOVER links to it; when a step lands or an input arrives, update
   the roadmap's critical path first.
@@ -307,25 +217,22 @@ main session needs:
 - **Designs hold the specification.** History (answered questions, deferred items, milestones) goes to
   `plans/archive/design-history/<area>.md`; a moved section keeps its number and heading with a `Moved to [...]` line,
   which `scripts/check-doc-refs.py` follows. Non-binding papers go to `plans/proposals/` with a status line.
-- **`to-verify.md` is sorted by when a check can run** (2026-11-15): the live block under the roadmap step whose input
-  it needs, before go-live (no input needed), and P2 and later. When a step's input arrives, its section is that
-  step's checklist; a new row goes where it can run.
+- **`to-verify.md` is sorted by when a check can run:** the live block under the roadmap step whose input it needs,
+  before go-live (no input needed), and P2 and later. When a step's input arrives, its section is that step's
+  checklist; a new row goes where it can run.
 - **Left for when each area is next worked on:** cite stable IDs (V39, a rule's name, a heading anchor) in new
-  citations rather than bare §-numbers; move the *Phases and planning* section of
-  `decisions.md` into the roadmap, keeping only binding rules there.
+  citations rather than bare §-numbers; move the *Phases and planning* section of `decisions.md` into the roadmap,
+  keeping only binding rules there.
 
 ## Environment notes
 
-- `rag_key.txt` in the repo root holds the interim-gateway key (mode 600, excluded in `.git/info/exclude`); the
-  address and the same key are in the AppHost user secrets (`Gateway:BaseUrl`, `Gateway:Keys:Eu`). Never commit,
-  print or move them.
-- **`ClamAv:Enabled` is gone** (#599): the AppHost stops on it. Use `ClamAv:Mode` = `on` | `off`.
-- **The AppHost won't start with these user secrets:** since B-37 it refuses a `Gateway:Keys` section ("give each
-  service its credential key as `Gateway:Services:<service>:Key`"). The user moves the key, or gives the three
-  credential keys once the interim gateway runs v0.10.0. `Parameters:gateway-key-{eu,onprem,external}` and
-  `Parameters:data-api-key` are stale too (`docs/local-development.md` lists the current parameters).
-- **Git over HTTPS:** `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' fetch|pull|push …`.
+- `rag_key.txt` in the repo root holds the interim-gateway key (mode 600, excluded in `.git/info/exclude`). Never
+  commit, print or move it.
+- **Git over HTTPS:** `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' fetch|pull|push …`,
+  in Fors's clone too: a plain `git push` waits for the Windows credential manager and never returns.
+- Ports 5000 and 5173 are held by other programs: Fors's IntegrationTests need `ASPNETCORE_URLS=http://127.0.0.1:0`.
 - `172.30.0.0/16` is taken on this machine; test networks use 10.21x.0.0/24.
-- **`actionlint`** is installed (`/snap/bin/actionlint`): run it on every workflow change. `shellcheck` is not.
+- **`actionlint`** is installed (`/snap/bin/actionlint`): run it on every workflow change, with `-shellcheck=
+  -pyflakes=` (it hung once without). `shellcheck` and `pwsh` are not installed.
 - **`grep` here is ugrep**, which reads `$` mid-pattern as an anchor (`grep '${A:-'` doesn't match `${A:-x}`). Use
   `grep -F` for literal `${...}`; the runner has GNU grep.

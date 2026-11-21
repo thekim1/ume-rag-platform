@@ -1,6 +1,6 @@
 # Accessibility statement: draft for the pilot
 
-Umeå kommun Knowledge platform (working name, N1), admin UI, assessed automatically on 2026-11-05. This is a **draft for
+Källa, admin UI, assessed automatically on 2026-11-05. This is a **draft for
 the pilot**, not a published or approved municipal statement (tillgänglighetsredogörelse). The responsible unit, contact
 route, publication date and reporting routine are filled in before publication, and the published statement is in
 Swedish (the repository's documents are in English).

@@ -20,22 +20,22 @@ lands or an input arrives.
 | `v0.8.0` (2026-11-19) | **The deploy simplification** (M-22): one service file and one bootstrap for Compose, Portainer and Kubernetes, upgrades in one step from 0.5.x, one escrow set, Open WebUI off unless asked for; continue a crawl run and its live progress; the images' security updates and a daily image scan (A-27, #818) |
 | `v0.9.0` (2026-11-21) | **Källa and Fors** (#899): the rename from Ume.Rag, licence Apache-2.0, on Fors `v0.12.1`, with an upgrade path for Compose, Portainer and Kubernetes; delete knowledge bases, sources and assistants, with what they held purged (#878); source dates, escalation and topics in the chat API (F4, F3, F8); the images' security updates from the first scan of 0.8.0 |
 
-What is left before go-live is live work, and every step of it waits on an input from people. **P2 code starts beside
-it once `v0.9.0` is released** (user, 2026-11-20; Decisions "P2 starts before go-live"): *P2 Broaden* below.
+What is left before go-live is live work, and every step of it waits on an input from people. **P2 code is built
+beside it since `v0.9.0`** (user, 2026-11-20; Decisions "P2 starts before go-live"): *P2 Broaden* below.
 
 ## Now: the test chatbot (before the umea.se pilot)
 
 Decided by the user, 2026-11-13 (Decisions "Test chatbot before the umea.se pilot"): a test chatbot on **DoIT's support
-documents**, uploaded, for a **small test group** in Open WebUI, on `v0.5.0` and the gateway, **both deployed by hand by
-the user**. It shows how well uploaded documents answer real questions before the umea.se pilot. Case plan:
+documents**, uploaded, for a **small test group** in Open WebUI, on the user's own deployment of Källa and the
+gateway (the VM, on `v0.5.0` today). It shows how well uploaded documents answer real questions before the umea.se pilot. Case plan:
 [`cases/support-assistant/`](cases/support-assistant/README.md) (`07-rollout.md` §0b and §1).
 **The user's team sets up and runs the test chatbot themselves** (user, 2026-11-14): the agents don't plan or prepare
 T2–T6; they fix what the team reports and answer questions.
 
 | # | Step | Input it waits on | Owner | Status |
 |---|---|---|---|---|
-| T0 | Gateway on v0.10.1 with the integration *Källa* and three credential keys (`kalla-api`; `kalla-admin` with `organisation.read`, `usage.read`; `kalla-worker` capped at `OnPrem`+`Eu`), the EU chat and embedding models, DoIT's department and team, and an assigned key for the assistant and the knowledge base (`docs/production-setup.md` *Gateway credential keys*) | the gateway deploy | user | open |
-| T1 | Källa `v0.5.0` deployed as one Portainer stack with the gateway (`docs/portainer.md`; Keycloak realm, Open WebUI, ClamAV on), checked with its read-backs. The upgrade to `v0.7.0` goes one release at a time, each with its own stack file: 0.5.x → 0.6.0 → 0.7.0 (the gateway to `v0.11.0`) | T0 | user | **deployed** (user, 2026-11-13: "0.5.0 deployed fine", with the Portainer stack and the `openwebui` and `clamav` profiles); read-backs to confirm |
+| T0 | The gateway with Källa's integration and its three credential keys (`rag-api`; `rag-admin` with `organisation.read`, `usage.read`; `rag-worker` capped at `OnPrem`+`Eu`), the EU chat and embedding models, DoIT's department and team, and an assigned key for the assistant and the knowledge base (`docs/production-setup.md` *Gateway credential keys*) | the gateway deploy | user | open |
+| T1 | Källa `v0.5.0` deployed as one Portainer stack with the gateway (`docs/portainer.md`; Keycloak realm, Open WebUI, ClamAV on), checked with its read-backs. It moves to `v0.9.0` on Fors `v0.12.1` in one update (`docs/portainer.md`, *Upgrade*) | T0 | user | **deployed** (user, 2026-11-13: "0.5.0 deployed fine", with the Portainer stack and the `openwebui` and `clamav` profiles); read-backs to confirm |
 | T2 | The test group's accounts (Keycloak or the gateway's sign-in) and their Open WebUI access; DoIT's admin in the admin UI | T1 | user | open |
 | T3 | DoIT's documents: the source inventory, then an upload knowledge base `support` (`internal`) with preview, first sync, run reports and the personal-data report (`02-knowledge-base.md` §5) | DoIT's files | user | open |
 | T4 | Assistant `support`: the instructions of `04-assistant.md` §3, the knowledge base's key (V39), general knowledge `fallback`, a not-found text with the real escalation links; checked in the test panel with about twenty anonymised or invented tickets | T3 | user | open |
@@ -70,31 +70,24 @@ table says "user".
 
 ## Meanwhile: work that needs no input
 
-Each becomes a queue item when the main session picks it up.
-- **Grading dry run: done** (main, 2026-11-15, FakeGateway stack): `answer` → graded CSV → `totals` against a live kalla-api with a real integration key (5 questions, one off-topic; `totals` exits 1 on a failing gate and 2 on an inconsistent file, naming the rows). Step 3 starts on working tools. Set-up note for step 3: the pilot assistant needs a description, a contact and a gateway key of its department that reaches both the chat model and the collection's embedding model at the assistant's ceiling (#720 for the refusal's wording).
-- **Checks before go-live:** done 2026-11-16 (#791; results in [`work/results-main.md`](work/results-main.md)) but
-  for row 96, the NVDA pass, which needs a Windows screen reader. Follow-ups: #792, #793; the question to KB (row 110)
-  is the user's call. The live block's rows are listed in [`to-verify.md`](to-verify.md) under each step below.
+P2 wave 1 (*P2 Broaden* below) is the code work. Beside it, what is open without an input:
+
+- **Checks before go-live:** done 2026-11-16 (results in [`work/results-main.md`](work/results-main.md)) but for
+  row 96, the NVDA pass, which needs a Windows screen reader. The question to KB (row 110) is the user's call. The
+  live block's rows are listed in [`to-verify.md`](to-verify.md) under each step.
+- **Step 3 starts on working tools:** the grading tools ran end to end on a FakeGateway stack (2026-11-15: `answer` →
+  graded CSV → `totals`, which exits 1 on a failing gate and 2 on an inconsistent file). The pilot assistant needs a
+  description, a contact and a gateway key of its department that reaches both the chat model and the collection's
+  embedding model at the assistant's ceiling.
 - **Upload gaps** ([`proposals/upload-quality-review.md`](proposals/upload-quality-review.md), U1–U7): measured on 14
   public IT guides (2026-11-15). U1 is the largest loss: 18 % of the text is inside screenshots (19–76 % in
   step-by-step guides), none of it kept. U5 and U7 cost little. The same script (`scripts/upload-gaps/measure.py`)
   runs on DoIT's files at T6.
-- **CI:** `backend` takes 4 min 53 s on a pull request (was 7 min 40 s) since #775: `Kalla.AdminApi.Tests` runs as
-  five processes, and a pull request with only admin UI or browser-test changes skips the job. Left: what the test
-  collections of one process wait for (not CPU, thread pool, disk or GC; a profiler would say), and one
-  `WebApplicationFactory` per class (#580 note to stream b).
-- **Setup wizard** (M-20, in `archive/work/to-v0.7.0.md`): released in `v0.7.0`. Shown by a release dry run with the
-  browser tests; not tried in Portainer itself, nor with both wizards completed against a real provider in one stack.
-- **Plan files:** the restructuring of session 33 (`work/main.md` M-14).
-- **Deploy configuration** (decided 2026-11-13, `work/main.md` M-17, [`proposals/deploy-configuration.md`](proposals/deploy-configuration.md)): a deploy that needs
-  only what a process can't start without; C0–C12 merged (C7 and C12 on the gateway's v0.10.2, C11 in 0.6.0); C13 left.
-- **Deploy simplification** (user, 2026-11-16, `work/main.md` M-22, [`proposals/deploy-simplification.md`](proposals/deploy-simplification.md)),
-  released in `v0.8.0`: one bootstrap and one service file for Compose, Portainer and Kubernetes (built: #798, #800, #808), Open WebUI off
-  unless asked for (#806, #809; the admin UI's part is #807), the upgrade paths older than 0.5.x deleted (#799),
-  upgrades in one step (#817) and one escrow set (S6). Left: operator pages without project vocabulary (S8). Host hardening is an optional step (#810);
-  one wizard hand-off and a first assigned key from the manifest are proposals to the gateway (llmgateway#108, #109).
-- **Connecting an app, the platform menu and the Settings page:** one guided flow without GUIDs, every platform page
-  in the side menu, Settings as a page of sections (`work/main.md` M-16; admin §5.9.1, §5.10).
+- **Not tried anywhere yet:** Portainer's own *Update the stack* on an upgraded stack (the VM's move to `v0.9.0` is
+  the first), and both setup wizards completed against a real provider in one stack. CI boots and upgrades the stack
+  with Compose.
+- **CI:** what the test collections of one `Kalla.AdminApi.Tests` process wait for (not CPU, thread pool, disk or
+  GC; a profiler would say); the project runs as five processes meanwhile.
 
 ## Waiting on people
 
@@ -102,26 +95,22 @@ The inputs of the critical path are in its table. The other open calls:
 
 | What | Who | Blocks |
 |---|---|---|
-| W1 relation to `chat.umea.se` (N1, the product name, is decided: Källa and Fors) | user, product owner | go-live |
+| W1 relation to `chat.umea.se` | user, product owner | go-live |
 | Upload gaps U1–U7: suggested picture descriptions (U1, needs a decision entry) and rerank on (U4) first | user | nothing in P1b |
 | Ask-a-file workspaces (P2): owned by teams and individuals, against "Organisation" (Decisions "Ask-a-file workspaces") | user | P2 |
 | Product calls: #333 finding 1 (`exactScanMaxChunks`, after the recall check on the test host); [`proposals/architecture-plans.md`](proposals/architecture-plans.md) items 1, 2, 4–7; the W3 grant step; a Git/Markdown connector | user | nothing in P1b |
 | #511 splitting the worker into libraries | stream b | only if it keeps growing in P2 |
 | Paths under one host name (`example.se/rag`), Decisions "Host names": not built | user | nothing; only if an organisation gets exactly one name |
+| Fewer hand steps after an install: one wizard hand-off and a first assigned key from the manifest, proposed to the gateway (thekim1/fors#108, #109) | user (Fors) | nothing |
 
 Every postponed decision with its stopgap and deadline: [`postponed-decisions.md`](postponed-decisions.md).
 
 ## P2 Broaden
 
-Several departments, internal sources, tools, and the first multi-host deployment. **P2 code starts once `v0.9.0` is
-released, beside the live block** (Decisions "P2 starts before go-live"); go-live keeps its gate. P2 runs in waves,
-each a set of queue items in `work/stream-a.md` and `work/stream-b.md`; the next wave is picked by the user when one
-is nearly done.
-
-**Before P2 code: `v0.9.0`.** Its content is on `main` (the support chatbot's F3 and F4, the deletes of #878, the demo
-seed, the host-only Compose fix) with the open items that need no input: B-52 (`kalla.topics`), B-53, A-37, A-38 and
-#874. Then the rename to Källa and Fors (Decisions "Product names"; stream b, user 2026-11-20: before 0.9.0), and
-then the preparation, a dry run with `e2e=true` and the tag, as the first release under the new names.
+Several departments, internal sources, tools, and the first multi-host deployment. **P2 code is built beside the
+live block since `v0.9.0`** (Decisions "P2 starts before go-live"); go-live keeps its gate. P2 runs in waves, each a
+set of queue items in `work/stream-a.md` and `work/stream-b.md`; the next wave is picked by the user when one is
+nearly done.
 
 **Wave 1: assistants and answer quality** (user, 2026-11-20). Designed; no input needed, built on FakeGateway:
 
@@ -139,57 +128,34 @@ chatbot's assistant (T4) once it exists; until then FakeGateway and the demo see
 
 **Later waves: themes that need no input** (the user picks the order):
 
-- **Tools and MCP:** the in-process tool hub, the agent loop, `/mcp` with `search_knowledge`, the mock municipal
-  server `ume-mcp-kommun` (tools design; the gateway passes function tools already). The SDK and validator re-checks
+- **Tools and MCP:** skills with know-how and tools, the in-process tool hub (`hosted` servers, read-only tools), the
+  agent loop, `/mcp` with `search_knowledge`, the mock municipal server `ume-mcp-kommun` (tools design; the gateway
+  passes function tools already). The SDK and validator re-checks
   of M1 and V1 come first (`postponed-decisions.md`).
-- **Ingestion breadth:** e-mail (`.eml`/`.msg`, Z1), site-profile learning and re-learning, a crawl frontier shared
-  between sources, publish plans from effect tags, adaptive embedding concurrency.
+- **Ingestion breadth:** e-mail (`.eml`/`.msg`) and archives (Z1), site-profile learning and re-learning,
+  parse-profile proposals, a crawl frontier shared between sources, publish plans from effect tags, adaptive
+  embedding concurrency; the renderer's replay check and path rules (after measurement) and, for external
+  single-page apps, a per-page burst of the page's own subrequests and an asset cache kept across runs (A-13).
 - **Assistants, the rest:** the drawn Map, unused-assistant attention items, the `TimeSeriesChart` trend.
+- **Chat:** a public widget.
+- **Operations:** flake-hunt, scale and fuzz workflows.
 
 **Themes that wait on people** (each with its input):
 
 | Theme | Waits on |
 |---|---|
-| A second department or a group audience: gateway release 2 (member groups from claims), cost attribution stage 2's done-when, owner-team edit scoping | the gateway team; W3's grant step |
+| A second department or a group audience: gateway release 2 (member groups from claims), cost attribution stage 2's done-when ([`platform/cost-attribution.md`](platform/cost-attribution.md) §6), owner-team edit scoping; one Open WebUI per department until W3 and E1 are solved | the gateway team; W3's grant step |
 | Entra ID with Källa's own registrations, OBO and the E1 spike | a tenant and its admin |
 | SharePoint | tenant access and an internal-content pilot (architecture plan item 9) |
 | Stored chat content (history modes, content encryption, conversation review), chat attachments | A1, G1 |
 | Ask-a-file workspaces | the user's calls on ownership (Decisions "Ask-a-file workspaces"); W3's grant step |
 | Multi-host topology (leader leases, Redis, batched dequeue, a/b slots), Postgres standby (D1), object store (S2) | IT, a second host |
-| `halfvec` embeddings, on-prem reranker and models | the full crawl's evaluation set; M2 hardware |
-
-The theme list as written before the split:
-
-- **More departments:** gateway release 2 (delegation, member groups from claims) before a second department or a
-  group audience; **cost attribution** stage 2's done-when (built in `v0.5.0`, steps B1–B7: two departments' objects as their own keys in
-  the gateway's usage report, a key budget stopping its assistant, the per-level keys revoked;
-  [`platform/cost-attribution.md`](platform/cost-attribution.md) §6); Entra ID with RAG's own registrations; OBO and the E1 spike; one Open WebUI per department until W3
-  and E1 are solved; owner-team edit scoping.
-- **Assistants:** version diff, per-assistant test-question sets, templates and presets (architecture plan item 3),
-  copy; unused-assistant attention items; the drawn Map.
-- **Ingestion:** site-profile learning and re-learning, a crawl frontier shared between sources, SharePoint, the
-  renderer's replay check and path rules (after measurement), legacy Office/RTF/e-mail/archives (Z1), parse-profile
-  proposals, adaptive embedding concurrency; for external single-page apps a per-page burst of the page's own
-  subrequests and a renderer asset cache kept across runs (A-13, user 2026-11-07).
-- **Storage:** embeddings stored as `halfvec` (#502; to-verify #117 found no recall cost), after repeating the check
-  on the full crawl's evaluation set.
-- **Answer quality:** nightly answer judge, publish plans from effect tags, an on-prem reranker behind the gateway's
-  `/v1/rerank` (rerank itself is built and optional, pulled forward from P2: Decisions "Rerank pulled forward"), on-prem
-  models when hardware exists (M2). Upload gaps U1–U7 (picture descriptions, e-mail,
-  spreadsheet questions, rerank on, contextual chunk headers, near-duplicates, OCR languages) and their proposed order:
-  [`proposals/upload-quality-review.md`](proposals/upload-quality-review.md) (2026-11-09; measure on the support-assistant
-  proof of concept first).
-- **Tools and skills:** skills with know-how and tools, the in-process tool hub (`hosted` servers, read-only tools),
-  `/mcp` with `search_knowledge`, the mock municipal server `ume-mcp-kommun`.
-- **Chat:** stored chat content when A1 allows it (history modes, content encryption, conversation review), chat
-  attachments, a public widget.
-- **Operations:** multi-host topology (leader leases, Redis for shared limits and caches, batched dequeue, a/b slots),
-  Postgres standby (D1) before production beyond the pilot, object store (S2), flake hunt, scale and fuzz workflows.
+| `halfvec` embeddings (#502; to-verify #117 found no recall cost), an on-prem reranker behind the gateway's `/v1/rerank`, on-prem models | the full crawl's evaluation set; M2 hardware |
 
 ## Later: P3 Scale and refine
 
 Driven by measurements: a Swedish retrieval benchmark (B1), OpenSearch if a trigger fires (O1), a separate
-`rag-tools` service, municipal and external tool hosting, per-skill MCP endpoints, Teams client, Entra OBO for
+`kalla-tools` service, municipal and external tool hosting, per-skill MCP endpoints, Teams client, Entra OBO for
 user-delegated tools, write tools with confirmation, a visual pipeline builder if its trigger fires (C2).
 
 ## Reference that still binds

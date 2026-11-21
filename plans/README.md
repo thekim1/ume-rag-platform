@@ -26,21 +26,28 @@ nobody needs to read them end to end.
 | Gateway changes | [`gateway-changes/design.md`](gateway-changes/design.md), [`adr-drafts.md`](gateway-changes/adr-drafts.md) | Residency ceiling, member groups, and what Källa relies on from the gateway's integrations (credential and assigned keys, acting as a key) |
 | Cost attribution | [`platform/cost-attribution.md`](platform/cost-attribution.md) | Who pays for each model call: each assistant and knowledge base on its own assigned gateway key, the gateway's cost as the record, Källa's split per step |
 
-**Proposals** (not binding until adopted in `decisions.md`), in [`proposals/`](proposals/), each with a status line:
+**Proposals** (not binding until adopted in `decisions.md`), in [`proposals/`](proposals/), each with a status line.
+With something still to choose from:
+- [`support-chatbot-features.md`](proposals/support-chatbot-features.md): ten candidates for a support chatbot; F3,
+  F4 and F8 are built, the rest is the user's pick.
 - [`architecture-plans.md`](proposals/architecture-plans.md): knowledge, assistants and models (2026-11-02); the roadmap
   names the items still open.
 - [`upload-quality-review.md`](proposals/upload-quality-review.md): how well uploaded files are handled, the gaps U1–U7
   and a proposed order.
 - [`assistant-keys-and-budgets-options.md`](proposals/assistant-keys-and-budgets-options.md): options paper; its
   outbound question is decided (#580: an assigned gateway key per assistant), the inbound one stays open.
-- [`deploy-configuration.md`](proposals/deploy-configuration.md): moving the deployment's variables into settings,
-  automatic setup and the gateway; decisions D1–D10, gateway changes G1–G5, steps C0–C13 (2026-11-13).
-- [`admin-ui-review.md`](proposals/admin-ui-review.md): a browser review of the admin UI; decisions UI1–UI4 (Home,
-  lists, audit log, assistant page) and small fixes (2026-11-15).
-- [`deploy-simplification.md`](proposals/deploy-simplification.md): where deployment is more complex than it needs
-  to be (three bootstraps, the host firewall, Open WebUI as a must, fragile upgrades) and what to do first; `work/main.md` M-22.
-- [`setup-wizard.md`](proposals/setup-wizard.md): a first-run wizard for sign-in and the last deploy values;
-  decisions W1–W10 (answered), gateway changes WG1–WG4, steps S0–S8 (2026-11-15, agreed).
+
+Built, kept as the record of why (their rules are in the decisions and designs each names):
+- [`deploy-configuration.md`](proposals/deploy-configuration.md): the deployment's variables moved into settings,
+  automatic setup and the gateway (M-17, `v0.6.0`).
+- [`admin-ui-review.md`](proposals/admin-ui-review.md): a browser review of the admin UI; Home, lists, audit log and
+  the assistant page (M-19, `v0.6.0`).
+- [`setup-wizard.md`](proposals/setup-wizard.md): the first-run wizard for sign-in (M-20, `v0.7.0`).
+- [`deploy-simplification.md`](proposals/deploy-simplification.md): one bootstrap and one service file, upgrades in
+  one step, Open WebUI optional (M-22, `v0.8.0`).
+
+**Cases:** [`cases/support-assistant/`](cases/support-assistant/README.md), the plan for the test chatbot on DoIT's
+support documents (the roadmap's steps T0 to T6).
 
 Registers, kept current:
 - [`postponed-decisions.md`](postponed-decisions.md): decisions put off on purpose, with stopgap, deadline and owner.
@@ -57,5 +64,4 @@ milestones, questions, deferred lists; a moved section keeps its heading with a 
 finished queue items (`work/`) and older proposals and reviews. Nothing there binds, except the
 performance pass's capacity model as named in the roadmap.
 
-Working name: **Källa** (placeholder, register N1). Plain-language overview for stakeholders:
-[`../docs/stakeholder-report.html`](../docs/stakeholder-report.html).
+Plain-language overview for stakeholders: [`../docs/stakeholder-report.html`](../docs/stakeholder-report.html).

@@ -2,7 +2,7 @@
 
 **Status:** **agreed** (user, 2026-11-15: W1–W10 answered, the design agreed after an independent review, §10). The
 binding rules are in Decisions "Setup wizard" and "Deploy configuration", identity §19, admin §5.11 and
-repo-and-deployment §6.3 and §7.1; the work is `work/main.md` **M-20**. The main session builds every step, stream b's
+repo-and-deployment §6.3 and §7.1. **Built and released in `v0.7.0`** (M-20, in `archive/work/to-v0.7.0.md`). The main session builds every step, stream b's
 paths included (user, 2026-11-15). Written by the main session, session 40.
 
 **Goal** (the user's idea, 2026-11-15): the platform is easy to set up. What a deployer still types into Portainer's

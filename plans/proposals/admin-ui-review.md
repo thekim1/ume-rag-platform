@@ -1,7 +1,8 @@
 # Admin UI review: Home, lists, audit log and the assistant page
 
 **Status:** **agreed** (user, 2026-11-15: UI1 B, UI2 B, UI3 A, UI4 B, each as recommended). The binding rules are in
-Decisions "Admin API and UI" and admin design §5.3, §5.5.1, §5.5.2, §5.5.4 and §9.1; the work is `work/main.md` M-19. Written by the main session, 2026-11-15, after a review of the admin UI in a
+Decisions "Admin API and UI" and admin design §5.3, §5.5.1, §5.5.2, §5.5.4 and §9.1. **Built and released in
+`v0.6.0`** (M-19, in `archive/work/to-v0.6.0.md`). Written by the main session, 2026-11-15, after a review of the admin UI in a
 browser.
 
 ## How the review was done

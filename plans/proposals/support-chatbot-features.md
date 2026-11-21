@@ -1,8 +1,9 @@
 # Support chatbot features: ten candidates beyond Eneo
 
 **Status:** **proposal**, for the user to choose from (decided 2026-11-15 to write it up; nothing is built until a
-feature is picked). **Picked** (user, 2026-11-19, #857): **F3** and **F4**, now Decisions "Escalation hand-off" and
-"Source dates on citations", chat §9.9 and knowledge §10.1, queued as B-48 and B-47. The others stay proposals. Each picked feature then gets a chat or admin design section and a Decisions line from the main
+feature is picked). **Picked and built** (released in `v0.9.0`): **F3** and **F4** (user, 2026-11-19, #857; Decisions
+"Escalation hand-off" and "Source dates on citations", chat §9.9 and knowledge §10.1) and **F8** (user, 2026-11-20;
+Decisions "Topics per request"). The others stay proposals. Each picked feature then gets a chat or admin design section and a Decisions line from the main
 session before it is queued (`cases/support-assistant/06-gaps.md` preamble). Written by the main session, 2026-11-15,
 from the comparison in [`../../platforms/eneo-vs-ume-rag.md`](../../platforms/eneo-vs-ume-rag.md) Part 2, which holds
 the Eneo evidence (the greps) for each.

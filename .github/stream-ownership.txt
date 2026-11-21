@@ -1,4 +1,4 @@
-# Who may change which path during P0 and P1. One rule per line: <glob> <owner>. The first matching rule wins.
+# Who may change which path. One rule per line: <glob> <owner>. The first matching rule wins.
 # Owners: a = stream A (platform and ingestion side), b = stream B (application and serving side),
 #         shared = either stream, append-only, in a PR of its own, main = main session (design and coordination).
 # Globs are anchored at the repository root (*.md is a root file only): * stays inside one directory, ** crosses

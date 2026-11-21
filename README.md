@@ -89,6 +89,7 @@ against `FORS_HEALTHCHECK_URL` (default `https://localhost:8443/health/ready`).
 
 ## Docs
 
+- [`docs/introduction.md`](docs/introduction.md) and [`docs/how-it-works.md`](docs/how-it-works.md): what Källa is and how its parts work together.
 - [`docs/local-development.md`](docs/local-development.md): the dev stack in detail and the start scripts.
 - [`docs/p1a-local-run.md`](docs/p1a-local-run.md): the local P1a run, against FakeGateway now and the interim gateway later.
 - [`docs/compose-quick-start.md`](docs/compose-quick-start.md): the gateway and Källa on one host with Docker Compose, the short path.
@@ -98,14 +99,17 @@ against `FORS_HEALTHCHECK_URL` (default `https://localhost:8443/health/ready`).
 - [`docs/runbook.md`](docs/runbook.md): backups, restore, key escrow, certificates, operations.
 - [`docs/network-and-ports.md`](docs/network-and-ports.md): listeners, outbound destinations and firewall/proxy rules per setup.
 - [`docs/test-host.md`](docs/test-host.md): the pilot test host, its caps, backups and the restore drill.
+- [`docs/keycloak.md`](docs/keycloak.md): Keycloak as the sign-in provider.
 - [`docs/security-events.md`](docs/security-events.md): the security event ids.
-- [`docs/upgrade-guide.md`](docs/upgrade-guide.md): upgrading between releases.
+- [`docs/upgrade-guide.md`](docs/upgrade-guide.md) and [`docs/zero-downtime-updates.md`](docs/zero-downtime-updates.md): upgrading between releases, and which releases update without a stop.
+- [`docs/ci-runner.md`](docs/ci-runner.md): the self-hosted runners and working with the workflows.
+- [`docs/accessibility-statement.md`](docs/accessibility-statement.md): the admin UI's accessibility statement.
 - [`docs/phase1-guide.html`](docs/phase1-guide.html) (Swedish) and [`docs/stakeholder-report.html`](docs/stakeholder-report.html): overviews for stakeholders.
 
 ## CI
 
 `verify.yml` runs on every pull request that is not a draft (on open, each push, and when it leaves draft) and by
-hand; nothing runs on a push to `main`. Its jobs are filtered by the paths a pull request changes:
+hand, not on a push to `main`. Its jobs are filtered by the paths a pull request changes:
 - `ownership` (stream paths) and `doc-refs` (links and section references in the documents);
 - `backend` (build and tests) and `evaluation-smoke`;
 - `images`, `renderer` and `deploy-checks` (Compose files, `init-deployment.sh`, the host scripts, the release bundle);
@@ -116,11 +120,14 @@ hand; nothing runs on a push to `main`. Its jobs are filtered by the paths a pul
 `release.yml` builds, tests, pins and publishes a release on a `v*.*.*` tag (dispatch: a dry run that pushes nothing).
 `e2e.yml` runs the browser tests, by hand or from `release.yml` when asked. `perf.yml` (the R1 release test) and
 `evaluation.yml` (the evaluation on the test deployment) run by hand; their schedules are off.
-`entra.yml` plans the Entra registrations.
+`entra.yml` plans the Entra registrations. `pages.yml` publishes the website (`site/`, with `docs/` and the changelog)
+on a push to `main` that changes them.
 
-**CI runs on self-hosted runners** (Decisions "CI on the self-hosted runner for every pull request";
+**CI runs on self-hosted runners** (Decisions "CI on the self-hosted runner";
 [`docs/ci-runner.md`](docs/ci-runner.md)): GitHub-hosted minutes are used up, so nothing runs on GitHub's runners.
-GitHub can't enforce required checks on this repository, so merge only on a green run (`gh pr checks <number>`).
+**`main` is protected:** a change goes in through a pull request with one approving review and green required checks
+(`ownership`, `doc-refs`, `backend`, `admin-ui`, `deploy-checks`, `images`, `renderer`, `evaluation-smoke`; a job
+that the path filter skips counts as passed).
 
 Before a pull request, run the test projects the change touches (`AGENTS.md`, *Tests*) and the ownership check:
 
@@ -132,7 +139,7 @@ git diff --name-only origin/main...HEAD | python3 -I scripts/check-ownership.py 
 
 Every package version is pinned exactly and images are pinned by digest (`AGENTS.md`). The 7-day rule (a version at
 least 7 days old when pinned) is suspended during development and applies again before the first production
-deployment, when every younger pin is reviewed (Decisions table, "7-day rule in development").
+deployment, when every younger pin is reviewed (Decisions "7-day rule in development").
 
 ## Licence
 

@@ -974,8 +974,7 @@ Assistants, Feedback, Menu.
 └──────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The Platform group of the drawing is replaced by §5.10's (Apps and keys, Models, Settings, Organisation, Audit log)
-once M-16 is built.
+The Platform group of the drawing is replaced by §5.10's (Apps and keys, Models, Settings, Organisation, Audit log).
 
 **Home** shows the selected department's setup checklists, attention items and a one-line summary with its contacts;
 **Knowledge bases** has the tabs *Ours*, *Shared with us* and *All* (`view=`, §4.5). The department picker in the
@@ -1480,7 +1479,7 @@ gateway models, organisation mirror (read); P2 department settings (owner-team s
 - The same concurrency (`version`), error codes, audit and accessibility rules apply.
 - Clients and keys left the generic forms (§5.9, user 2026-11-13). Every generic form shows the row's `id` with a copy
   button, a schema `enum` as a select, and a `date-time` field as a date and time input.
-- §5.10 (not built yet) puts each platform page in the side menu, drops this index page and gives Settings a page of
+- §5.10 puts each platform page in the side menu, drops this index page and gives Settings a page of
   its own; §5.9.1 removes the generic `keys` resource.
 
 ### 5.9 Clients and keys (user, 2026-11-13)
@@ -1537,7 +1536,7 @@ gains a client column.
   `assistants: [{ id, name, departmentId, published }]` (the assistants with a `client` audience row for it).
 - `GET /api/keys` keeps its `clientId` filter; `KeyDto` adds `clientName`.
 
-#### 5.9.1 Second pass: connect an app in one go (user, 2026-11-13; `work/main.md` M-16; not built yet)
+#### 5.9.1 Second pass: connect an app in one go (user, 2026-11-13; M-16, built in 0.6.0)
 
 After §5.9's first pass a new client still cannot use anything (access is given on each assistant's page, one at a
 time), an integration's result is a secret and a GUID with no address or model name, the key form shows every assistant
@@ -1602,7 +1601,7 @@ no form asks for a typed GUID.
 - `KeyDto` adds `lastUsedAt` (from `KeyLastUse`, data-model §2.1); `ClientSummary` adds `lastUsedAt`, the latest of its
   keys.
 
-### 5.10 Platform menu and the Settings page (user, 2026-11-13; `work/main.md` M-16; not built yet)
+### 5.10 Platform menu and the Settings page (user, 2026-11-13; M-16, built in 0.6.0)
 
 Today the side menu's Platform group has one item, **Platform**, that opens an index of seven cards (§5.8), so every
 platform object is two clicks away; Organisation is both a menu item and a card; and Settings is a table of nine

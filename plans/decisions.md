@@ -264,7 +264,7 @@ feedback import's address with the `openwebui` profile and a fixed 15-minute int
 `clamav` profile; the embedding profile created in the admin UI from the gateway's embedding models, its dimensions
 measured; the organisation's name and the Integration API from the gateway (G4 #89, G5 #90). The Portainer stack has
 an optional `proxy` profile: nginx with the operator's certificates, in Källa's template, for all five host names.
-Detail and order: `proposals/deploy-configuration.md`; work: `work/main.md` M-17.
+Detail and order: `proposals/deploy-configuration.md`; built as M-17 (`archive/work/to-v0.9.0.md`).
 
 *From:* decided by user, 2026-11-13 (session 34, D1–D10); sign-in values to the setup wizard and `FORS_DOMAIN`, decided
 by user, 2026-11-15.

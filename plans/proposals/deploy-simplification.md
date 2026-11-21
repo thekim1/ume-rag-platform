@@ -1,10 +1,16 @@
 # Deploy simplification: one bootstrap, fewer special cases
 
-**Status:** **proposal** (main session, session 45, 2026-11-16), from an analysis of a first install and of the install
+**Status:** **built and released in `v0.8.0`** (M-22, closed 2026-11-20; the item is in
+`archive/work/to-v0.9.0.md`): one bootstrap and one service file, upgrades in one step, one escrow set and Open WebUI
+off unless asked for are built; S2's host hardening is an optional step; S8 is a standing rule in `work/main.md`;
+S5 and S7 are proposals to the gateway (thekim1/fors#108, #109). The rules are in Decisions "One deployment
+bootstrap". What follows is the proposal as written, kept as the record of why.
+
+**As proposed** (main session, session 45, 2026-11-16), from an analysis of a first install and of the install
 and upgrade guides (#794, #795, #796). The user asked for it to be written down and for the work to start in the next
 session (2026-11-16), and added S9 (Open WebUI easy to skip); the recommended start is S1, S3 with S9, and S4a. S2 and S5 change the security design or the gateway and
 wait for the user's decision. **S1's four points are decided** (2026-11-16, session 46; Decisions "One deployment
-bootstrap"); the rest binds only when it is adopted in `decisions.md`. The work is `work/main.md` **M-22**.
+bootstrap"); the rest binds only when it is adopted in `decisions.md`.
 
 **Goal:** the same system deploys the same way in every form, and an operator does only what a person must do. Today
 the complexity is mostly duplication: the deployment is implemented three times, and the two products each bring

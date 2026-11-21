@@ -48,7 +48,8 @@ gateway's conventions for names, config keys, claims, key format and security ev
 - **Results.** Record each check from `plans/to-verify.md` in your stream's results file (`plans/work/results-a.md` or
   `plans/work/results-b.md`): row number, result, evidence (command, output, link).
 - **PRs.** One PR per queue item or smaller. Branch `a/<id>-<slug>` or `b/<id>-<slug>`, rebased on `main`,
-  `verify.yml` green, squash-merged. The PR body follows the template and shows the done-when evidence.
+  `verify.yml` green, one approving review (`main` is protected), squash-merged. The PR body follows the template
+  and shows the done-when evidence.
 
 ## Conventions the code won't tell you
 
